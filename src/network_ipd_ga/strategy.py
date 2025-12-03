@@ -22,15 +22,15 @@ def decide_action(strategy: Strategy, round_index: int, opponent_prev_action: in
     strategy = (b0, b1, b2)
     - t == 0: b0 を用いる
     - t >= 1: 直前の相手行動に応じて
-        - 相手が C(1) のとき -> b1
-        - 相手が D(0) のとき -> b2
+        - 相手が D(0) のとき -> b1
+        - 相手が C(1) のとき -> b2
     """
     b0, b1, b2 = strategy
 
     if round_index == 0 or opponent_prev_action is None:
         return b0
 
-    if opponent_prev_action == C:
+    if opponent_prev_action == D:
         return b1
     else:
         return b2

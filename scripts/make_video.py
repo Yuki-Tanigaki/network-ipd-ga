@@ -9,9 +9,19 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
+from matplotlib.lines import Line2D
+from network_ipd_ga.config_loader import load_config
 
-from network_ipd_ga.config_loader import load_config  # ← 追加：config からパスを決める
-
+COLOR_MAP = {
+    "000": "black",
+    "001": "tab:blue",
+    "010": "tab:orange",
+    "011": "tab:green",
+    "100": "tab:red",
+    "101": "tab:purple",
+    "110": "tab:brown",
+    "111": "tab:pink",
+}
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -45,13 +55,6 @@ def parse_args() -> argparse.Namespace:
         help="DPI for output (default: 150).",
     )
     parser.add_argument(
-        "--layout",
-        type=str,
-        choices=["spring", "circular", "kamada"],
-        default="spring",
-        help="Network layout type (default: spring).",
-    )
-    parser.add_argument(
         "--figsize",
         type=float,
         nargs=2,
@@ -66,7 +69,6 @@ def load_graph(path: Path) -> nx.Graph:
         G: nx.Graph = pickle.load(f)
     return G
 
-
 def compute_layout(G: nx.Graph, layout: str):
     if layout == "spring":
         pos = nx.spring_layout(G, seed=0)
@@ -78,33 +80,51 @@ def compute_layout(G: nx.Graph, layout: str):
         raise ValueError(f"Unknown layout: {layout}")
     return pos
 
+def layout_from_topology(topology: str) -> str:
+    """
+    config.topology からレイアウト名を自動決定する。
+    """
+    topo = topology.lower()
+
+    if topo == "lattice":
+        return "circular"
+    elif topo == "small_world":
+        return "circular"
+    elif topo == "scale_free":
+        # スケールフリーも spring_layout が無難
+        return "spring"
+    else:
+        # 不明な場合のフォールバック
+        return "spring"
+
 
 def strategy_to_color(strategy_bits: str) -> str:
     """
     戦略ビット列 (例 '010') をノード色にマップする。
     適宜好きな色に変えてOK。
     """
-    color_map = {
-        "000": "black",
-        "001": "tab:blue",
-        "010": "tab:orange",
-        "011": "tab:green",
-        "100": "tab:red",
-        "101": "tab:purple",
-        "110": "tab:brown",
-        "111": "tab:pink",
-    }
-    return color_map.get(strategy_bits, "gray")
+    return COLOR_MAP.get(strategy_bits, "gray")
 
+# 画面サイズに応じてノードサイズを調整する
+def compute_uniform_node_size(G: nx.Graph, figsize: tuple[float, float]) -> float:
+    """
+    図サイズとノード数から見やすいノードサイズを動的に計算する。
+    """
+    num_nodes = G.number_of_nodes()
+    width, height = figsize
 
-def payoff_to_size(payoff: float) -> float:
-    """
-    利得をノードサイズにマップする。
-    スケールは好みに応じて調整してください。
-    """
-    base = 100.0
-    scale = 10.0
-    return max(base, base + scale * payoff)
+    # 図の面積 ≒ width * height
+    area = width * height
+
+    # ノード密度に応じてサイズを調整（経験的な係数 200〜500 が妥当）
+    base_factor = 300.0
+
+    # ノードサイズは matplotlib の scatter の "ポイント^2" なので少し調整
+    size = base_factor * area / max(30, num_nodes)
+
+    # 極端に大きく/小さくならないようクリップ
+    size = max(50, min(size, 2000))
+    return size
 
 
 def main() -> None:
@@ -156,20 +176,29 @@ def main() -> None:
     node_order = list(G.nodes())
 
     # レイアウト計算（固定）
-    pos = compute_layout(G, args.layout)
+    layout_name = layout_from_topology(cfg.topology)
+    pos = compute_layout(G, layout_name)
+
 
     # --- 描画の準備 ---
     fig, ax = plt.subplots(figsize=tuple(args.figsize))
     plt.axis("off")
 
     scat = None
+    uniform_size = compute_uniform_node_size(G, args.figsize)
 
     def update(frame_idx: int):
         nonlocal scat
         gen = generations[frame_idx]
-        ax.clear()
-        ax.set_title("")
-        plt.axis("off")
+
+        # 前フレームの描画だけ消す（凡例は残す）
+        for coll in list(ax.collections):
+            coll.remove()
+
+        for patch in list(ax.patches):
+            patch.remove()
+
+        ax.set_axis_off()
 
         # この世代のノード情報
         df_g = node_df[node_df["generation"] == gen]
@@ -181,12 +210,12 @@ def main() -> None:
             row = row_by_id.get(int(nid))
             if row is None:
                 colors.append("gray")
-                sizes.append(100.0)
+                sizes.append(uniform_size)
+                print(f"[WARNING] Node ID {nid} missing in generation {gen}, coloring gray.")
             else:
-                bits = str(row["strategy_bits"])
-                payoff = float(row["payoff"])
+                bits = format(int(row["strategy_int"]), "03b")
                 colors.append(strategy_to_color(bits))
-                sizes.append(payoff_to_size(payoff))
+                sizes.append(uniform_size)
 
         # 描画
         nx.draw_networkx_edges(G, pos, ax=ax, alpha=0.4, width=1.0)
@@ -213,6 +242,17 @@ def main() -> None:
         ax.set_title(title)
         return scat,
 
+    # --- 凡例の作成 ---
+    legend_elements = [
+        Line2D([0], [0], marker='o', color='w',
+            label=bits, markerfacecolor=color, markersize=10)
+        for bits, color in COLOR_MAP.items()
+    ]
+
+    ax.legend(handles=legend_elements, title="Strategy bits",
+            loc="upper right", fontsize=8)
+
+    # --- アニメーション作成 ---
     ani = FuncAnimation(
         fig,
         update,

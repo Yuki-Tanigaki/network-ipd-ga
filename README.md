@@ -80,3 +80,14 @@ output_base: "smallworld_meta00"
 | `strategy_coop_rate` | **戦略ビット列の 1 の割合**（全ノードの戦略を集計した協力傾向）                             | `cooperation_rate_from_strategies()`  |
 | `diversity`          | **戦略分布のシャノンエントロピー**（多様性指標）                               | `strategy_diversity_entropy()`        |
 | `avg_payoff`         | **エージェントの平均利得**（その世代での対戦後の payoff の平均）                   | `sum(a.payoff)/len(agents)`           |
+
+# Make Figure
+統計データのグラフ化
+```bash 
+uv run scripts/make_figure.py --config settings/config.yml --seed 42
+```
+
+ノードの戦略変化を動画化
+```bash 
+uv run scripts/make_video.py --config settings/config.yml --seed 42
+```
