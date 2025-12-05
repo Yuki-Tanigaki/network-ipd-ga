@@ -35,12 +35,12 @@ uv venv source .venv/bin/activate uv sync
 `scripts/run_single_experiment.py` を使って実行します。 
 ## Basic usage 
 ```bash 
-uv run scripts/run_single_experiment.py --config settings/config.yml --seed 42 
+uv run scripts/run_single_experiment.py --config configs/sample.yml --seed 42 
 ```
 実行後、結果 CSV が `results/csvs/` に保存されます。
 
-# Configuration (config.yml) 
-`settings/config.yml` はシミュレーションの全パラメータを記述する YAML ファイルです。 
+# Configuration (sample.yml) 
+`configs/sample.yml` はシミュレーションの全パラメータを記述する YAML ファイルです。 
 例：
 ```yaml 
 num_agents: 100 
@@ -80,14 +80,15 @@ output_base: "smallworld_meta00"
 | `strategy_coop_rate` | **戦略ビット列の 1 の割合**（全ノードの戦略を集計した協力傾向）                             | `cooperation_rate_from_strategies()`  |
 | `diversity`          | **戦略分布のシャノンエントロピー**（多様性指標）                               | `strategy_diversity_entropy()`        |
 | `avg_payoff`         | **エージェントの平均利得**（その世代での対戦後の payoff の平均）                   | `sum(a.payoff)/len(agents)`           |
+| 000         | **各戦略数**（その世代において該当する戦略を持った個体の数）                   | `strategy_counts`で集計           |
 
 # Make Figure
 統計データのグラフ化
 ```bash 
-uv run scripts/make_figure.py --config settings/config.yml --seed 42
+uv run scripts/make_figure.py --config configs/sample.yml --seeds 0-9
 ```
 
 ノードの戦略変化を動画化
 ```bash 
-uv run scripts/make_video.py --config settings/config.yml --seed 42
+uv run scripts/make_video.py --config configs/sample.yml --seed 42
 ```

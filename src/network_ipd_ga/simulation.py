@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 import pandas as pd
 import networkx as nx
 
-from network_ipd_ga.network import make_lattice_graph, make_small_world_graph, make_scale_free_graph
+from network_ipd_ga.network import make_cycle_graph, make_small_world_graph, make_scale_free_graph
 from network_ipd_ga.agent import Agent
 from network_ipd_ga.strategy import random_strategy, strategy_to_int, int_to_strategy
 from network_ipd_ga.game import play_ipd
@@ -17,7 +17,7 @@ from network_ipd_ga.metrics import strategy_diversity_entropy, cooperation_rate_
 from collections import Counter
 
 
-Topology = Literal["lattice", "small_world", "scale_free"]
+Topology = Literal["cycle", "small_world", "scale_free"]
 ModelType = Literal["ga", "meta_ga"]
 
 
@@ -29,8 +29,8 @@ def _build_graph(
     small_world_p: float,
     scale_free_m: int,
 ) -> nx.Graph:
-    if topology == "lattice":
-        return make_lattice_graph(num_agents)
+    if topology == "cycle":
+        return make_cycle_graph(num_agents)
     elif topology == "small_world":
         return make_small_world_graph(num_agents, k=small_world_k, p=small_world_p, seed=seed)
     elif topology == "scale_free":
@@ -39,8 +39,7 @@ def _build_graph(
         raise ValueError(f"Unknown topology: {topology}")
 
 def run_simulation(
-    topology: Topology = "lattice",
-    model_type: ModelType = "ga",
+    topology: Topology = "cycle",
     num_agents: int = 100,
     generations: int = 100,
     T: int = 50,
@@ -78,8 +77,6 @@ def run_simulation(
 
     history_records = []
     node_history: List[dict] = []
-
-    use_meta = (model_type == "meta_ga")
 
     for gen in range(generations):
         # 利得リセット
@@ -145,7 +142,6 @@ def run_simulation(
             graph=graph,
             rng=rng,
             mutation_rate=mutation_rate,
-            use_meta=use_meta,
             meta_influence=meta_influence,
         )
         logger.info(

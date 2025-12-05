@@ -1,0 +1,12 @@
+num_agents: 1000
+generations: 100
+T: 50
+mutation_rate: 0.01
+small_world_k: 4
+small_world_p: 0.1
+scale_free_m: 2
+logs_dir: results/logs
+output_dir: results
+topology: scale_free
+meta_influence: 0.4
+output_base: scale_free_meta04

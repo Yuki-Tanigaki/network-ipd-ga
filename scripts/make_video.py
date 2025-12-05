@@ -86,7 +86,7 @@ def layout_from_topology(topology: str) -> str:
     """
     topo = topology.lower()
 
-    if topo == "lattice":
+    if topo == "cycle":
         return "circular"
     elif topo == "small_world":
         return "circular"
@@ -141,13 +141,13 @@ def main() -> None:
     base = cfg.output_base
     out_dir: Path = cfg.output_dir  # config_loader が Path に変換している 
 
-    graph_path = out_dir / "pickles" / f"{base}_seed{seed}_graph.pickle"
-    nodes_path = out_dir / "csvs" / f"{base}_seed{seed}_nodes.csv"
-    summary_path = out_dir / "csvs" / f"{base}_seed{seed}.csv"
+    graph_path = out_dir / "pickles" / f"{base}_seed{seed:04d}_graph.pickle"
+    nodes_path = out_dir / "csvs" / f"{base}_seed{seed:04d}_nodes.csv"
+    summary_path = out_dir / "csvs" / f"{base}_seed{seed:04d}.csv"
 
     # 動画の出力先
     video_dir = out_dir / "videos"
-    out_path = video_dir / f"{base}_seed{seed}.mp4"
+    out_path = video_dir / f"{base}_seed{seed:04d}.mp4"
 
     # --- データ読み込み ---
     print(f"[INFO] Loading graph from {graph_path} ...")

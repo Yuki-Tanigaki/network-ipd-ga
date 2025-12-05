@@ -3,9 +3,9 @@ from __future__ import annotations
 import networkx as nx
 
 
-def make_lattice_graph(num_agents: int) -> nx.Graph:
+def make_cycle_graph(num_agents: int) -> nx.Graph:
     """
-    1次元格子（環状）のネットワークを生成する。
+    1次元（環状）のネットワークを生成する。
     各ノードは左右1つずつ、計2つの隣接ノードを持つ。
     """
     return nx.cycle_graph(num_agents)

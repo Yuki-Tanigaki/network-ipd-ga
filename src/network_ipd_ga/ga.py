@@ -45,7 +45,6 @@ def reproduce_population(
     graph: nx.Graph,
     rng: random.Random,
     mutation_rate: float = 0.01,
-    use_meta: bool = False,
     meta_influence: float = 0.3,
 ) -> None:
     """
@@ -62,9 +61,8 @@ def reproduce_population(
 
     # メタ戦略（最頻戦略）の算出
     meta_strategy: Strategy | None = None
-    if use_meta:
-        counter = Counter(a.strategy for a in agents)
-        meta_strategy = counter.most_common(1)[0][0]
+    counter = Counter(a.strategy for a in agents)
+    meta_strategy = counter.most_common(1)[0][0]
 
     new_strategies: Dict[int, Strategy] = {}
 
@@ -79,7 +77,7 @@ def reproduce_population(
         child = uniform_crossover(parent1.strategy, parent2.strategy, rng)
         child = mutate(child, mutation_rate, rng)
 
-        if use_meta and meta_strategy is not None and rng.random() < meta_influence:
+        if meta_strategy is not None and rng.random() < meta_influence:
             # メタ戦略との一様交叉を追加で行う
             child = uniform_crossover(child, meta_strategy, rng)
 
